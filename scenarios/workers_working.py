@@ -19,10 +19,13 @@ vehicle stopped close enough to the leading vehicle
 import random
 import weakref
 
+import carla
 import py_trees
+from carla import ColorConverter as cc
+from save_images_behaviour import SaveImagesBehaviour
 from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from srunner.scenariomanager.scenarioatomics.atomic_behaviors import (
-    ActorDestroy, ActorTransformSetter, KeepVelocity, StopVehicle,
+    ActorDestroy, ActorTransformSetter, Idle, KeepVelocity, StopVehicle,
     WaypointFollower)
 from srunner.scenariomanager.scenarioatomics.atomic_criteria import \
     CollisionTest
@@ -32,9 +35,6 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
-
-import carla
-from carla import ColorConverter as cc
 
 conversion_types = {
     "sensor.camera.rgb": cc.Raw,
@@ -72,6 +72,7 @@ class WorkersWorkingScenario(BasicScenario):
         self._other_actor_transform = None
         # Timeout of scenario in seconds
         self.timeout = timeout
+        self._images = []
 
         super(WorkersWorkingScenario, self).__init__("WorkersWorking",
                                                      ego_vehicles,
@@ -110,7 +111,7 @@ class WorkersWorkingScenario(BasicScenario):
             bp = bp_library.find(camera.model)
             bp.set_attribute('image_size_x', str(1280))
             bp.set_attribute('image_size_y', str(720))
-            bp.set_attribute('sensor_tick', '1.0')
+            bp.set_attribute('sensor_tick', '0')
             # bp.set_attribute('gamma', '2.2')
             camera_actor = self._world.spawn_actor(bp, camera.transform)
             self.camera_sensors.append(
@@ -121,12 +122,13 @@ class WorkersWorkingScenario(BasicScenario):
             def _parse_rgb_image(actor_ref, convert_type, image):
                 actor = actor_ref()
                 image.convert(convert_type)
-                image.save_to_disk(f'_out/{actor.id}/{image.frame}')
+                image.save_to_disk(f'_out/{actor.id}/{image.frame}.jpeg')
 
             def _parse_seg_image(actor_ref, convert_type, image):
                 actor = actor_ref()
                 image.convert(convert_type)
-                image.save_to_disk(f'_out/{actor.id}/{image.frame}')
+                self._images.append(image)
+                # image.save_to_disk(f'_out/{actor.id}/{image.frame}.jpeg')
             if camera.model.endswith("rgb"):
                 camera_actor.listen(
                     lambda image: _parse_rgb_image(actor_ref, conversion_types[camera.model], image))
@@ -156,33 +158,26 @@ class WorkersWorkingScenario(BasicScenario):
             "DrivingTowardsIntersection",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
 
-        driving_to_next_intersection.add_child(WaypointFollower(
-            self.other_actors[0], self._first_vehicle_speed))
-        driving_to_next_intersection.add_child(InTriggerDistanceToNextIntersection(
-            self.other_actors[0], self._other_actor_stop_in_front_intersection))
+        # driving_to_next_intersection.add_child(WaypointFollower(
+        #     self.other_actors[0], self._first_vehicle_speed))
+        driving_to_next_intersection.add_child(KeepVelocity(
+            self.other_actors[0],
+            target_velocity=15,
+            duration=10))
 
         # stop vehicle
         stop = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
 
         # end condition
-        endcondition = py_trees.composites.Parallel("Waiting for end position",
-                                                    policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
-        endcondition_part1 = InTriggerDistanceToVehicle(self.other_actors[0],
-                                                        self.ego_vehicles[0],
-                                                        distance=20,
-                                                        name="FinalDistance")
-        endcondition_part2 = StandStill(
-            self.ego_vehicles[0], name="StandStill", duration=20)
-        endcondition.add_child(endcondition_part1)
-        endcondition.add_child(endcondition_part2)
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         # sequence.add_child(start_transform)
         sequence.add_child(driving_to_next_intersection)
         sequence.add_child(stop)
-        sequence.add_child(endcondition)
-        sequence.add_child(ActorDestroy(self.other_actors[0]))
+        sequence.add_child(Idle(5))
+        sequence.add_child(SaveImagesBehaviour(self._images))
+        # sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         return sequence
 

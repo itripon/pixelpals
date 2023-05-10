@@ -3,10 +3,10 @@
     <scenario name="WorkersWorking_1" type="WorkersWorkingScenario" town="Town01">
         <ego_vehicle x="107" y="133" z="0.5" yaw="0" model="vehicle.lincoln.mkz_2017" />
         <other_actor x="110" y="137" z="1.6" yaw="0" speed="7" model="walker.pedestrian.0001" />
-        <other_actor x="115" y="133" z="1.6" yaw="-90" model="walker.pedestrian.0002" />
-        <other_actor x="120" y="133" z="1.6" yaw="-90" model="walker.pedestrian.0003" />
-        <other_actor x="120" y="133" z="5" yaw="0" model="sensor.camera.rgb" />
-        <other_actor x="120" y="133" z="5" yaw="0" model="sensor.camera.semantic_segmentation" />
+        <!-- <other_actor x="110" y="139" z="1.6" yaw="0" speed="3" model="walker.pedestrian.0001" /> -->
+        <other_actor x="110" y="137" z="0.6" yaw="0" length="10" width="10" model="static.trigger.friction" />
+        <!-- <other_actor x="120" y="133" z="5" yaw="0" model="sensor.camera.rgb" /> -->
+        <other_actor x="120" y="133" z="5" yaw="0" model="sensor.camera.semantic_segmentation" args="asds" />
         <weather cloudiness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth_angle="0" sun_altitude_angle="75" />
     </scenario>
 </scenarios>
