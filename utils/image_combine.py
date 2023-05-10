@@ -4,7 +4,11 @@ from pathlib import Path
 from PIL import Image
 
 def combine_and_write(folder):
-    folder.joinpath("results").mkdir(exist_ok=True)
+    try:
+        folder.joinpath("results").mkdir()
+    except FileExistsError:
+        return
+    
     result_folder = folder.joinpath("results")
     for rgb_img_path, segment_img_path in zip(folder.joinpath("rgb").glob("*"), folder.joinpath("segment").rglob("*")):
 
