@@ -1,0 +1,30 @@
+{
+    "carla_destination": "CARLA.zip",
+    "scenario_runner_destination": "ScenarioRunner.zip",
+    "temp_files_to_download_csv": "sources.csv",
+    "carla_local": "CARLA",
+    "scenario_runner_local": "ScenarioRunner",
+    "python37path": "C:\\Python\\Python37\\python.exe",
+    "pip_install_requirements": "pip install -r",
+    "pip_install": "pip install",
+    "sep": "\\",
+    "carla_engine_path": "WindowsNoEditor",
+    "carla_python_api_path": "WindowsNoEditor\\PythonAPI\\carla\\",
+    "carla_python_api_requirements_path": "WindowsNoEditor\\PythonAPI\\examples",
+    "scenario_runner_path": "scenario_runner-0.9.13",
+    "carla_process": "CarlaUE4",
+    "carla_process_shipping": "CarlaUE4-Win64-Shipping",
+    "requirements_file": "requirements.txt",
+    "files_to_download": [
+        {
+            "Uri": "https://carla-releases.s3.eu-west-3.amazonaws.com/Windows/CARLA_0.9.14.zip",
+            "OutFile": "CARLA.zip"
+        },
+        {
+            "Uri": "https://github.com/carla-simulator/scenario_runner/archive/refs/tags/v0.9.13.zip",
+            "OutFile": "ScenarioRunner.zip"
+        }
+    ],
+    "scenario_runner": "scenario_runner.py",
+    "scenario_to_execute": "--scenario WorkersWorking_1 --sync --reloadWorld --configFile .\\scenarios\\WorkersWorking.xml --additionalScenario .\\scenarios\\workers_working.py"
+}
