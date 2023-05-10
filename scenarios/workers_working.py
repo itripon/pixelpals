@@ -73,6 +73,7 @@ class WorkersWorkingScenario(BasicScenario):
         # Timeout of scenario in seconds
         self.timeout = timeout
         self._images = []
+        self._target_speeds = []
 
         super(WorkersWorkingScenario, self).__init__("WorkersWorking",
                                                      ego_vehicles,
@@ -81,15 +82,6 @@ class WorkersWorkingScenario(BasicScenario):
                                                      debug_mode,
                                                      criteria_enable=criteria_enable)
 
-        if randomize:
-            self._ego_other_distance_start = random.randint(4, 8)
-
-            # Example code how to randomize start location
-            # distance = random.randint(20, 80)
-            # new_location, _ = get_location_in_distance(self.ego_vehicles[0], distance)
-            # waypoint = CarlaDataProvider.get_map().get_waypoint(new_location)
-            # waypoint.transform.location.z += 39
-            # self.other_actors[0].set_transform(waypoint.transform)
     def _setup_scenario_trigger(self, config):
         return None
 
@@ -98,14 +90,18 @@ class WorkersWorkingScenario(BasicScenario):
         Custom initialization
         """
         self.camera_sensors = []
-        if config.other_actors:
-            new_actors = CarlaDataProvider.request_new_actors(
-                [actor for actor in config.other_actors if not actor.model.startswith("sensor.camera")])
-            if not new_actors:
-                raise Exception("Error: Unable to add actors")
+        pedestrian_configs = [
+            actor for actor in config.other_actors if actor.model.startswith("walker")]
+        pedestrian_actors = CarlaDataProvider.request_new_actors(
+            pedestrian_configs)
+        for ped_config in pedestrian_configs:
+            self._target_speeds.append(float(ped_config.speed))
 
-            for new_actor in new_actors:
-                self.other_actors.append(new_actor)
+        self.other_actors.extend(pedestrian_actors)
+        misc_actors = CarlaDataProvider.request_new_actors(
+            [actor for actor in config.other_actors if actor.model.startswith("static")])
+        self.other_actors.extend(misc_actors)
+
         bp_library = self._world.get_blueprint_library()
         for camera in [camera for camera in config.other_actors if camera.model.startswith("sensor.camera")]:
             bp = bp_library.find(camera.model)
@@ -156,27 +152,26 @@ class WorkersWorkingScenario(BasicScenario):
         # @todo: We should add some feedback mechanism to respond to ego_vehicle behavior
         driving_to_next_intersection = py_trees.composites.Parallel(
             "DrivingTowardsIntersection",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
 
         # driving_to_next_intersection.add_child(WaypointFollower(
         #     self.other_actors[0], self._first_vehicle_speed))
-        driving_to_next_intersection.add_child(KeepVelocity(
-            self.other_actors[0],
-            target_velocity=15,
-            duration=10))
+        for index, pedestrian in enumerate([_ for _ in self.other_actors if _.type_id.startswith('walker.pedestrian')]):
+            driving_to_next_intersection.add_child(KeepVelocity(
+                pedestrian,
+                target_velocity=self._target_speeds[index],
+                duration=10))
 
         # stop vehicle
         stop = StopVehicle(self.other_actors[0], self._other_actor_max_brake)
-
-        # end condition
 
         # Build behavior tree
         sequence = py_trees.composites.Sequence("Sequence Behavior")
         # sequence.add_child(start_transform)
         sequence.add_child(driving_to_next_intersection)
         sequence.add_child(stop)
-        sequence.add_child(Idle(5))
-        sequence.add_child(SaveImagesBehaviour(self._images))
+        sequence.add_child(Idle(25))
+        # sequence.add_child(SaveImagesBehaviour(self._images))
         # sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         return sequence
