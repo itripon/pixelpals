@@ -18,6 +18,7 @@ vehicle stopped close enough to the leading vehicle
 
 import random
 import weakref
+import datetime
 
 import carla
 import py_trees
@@ -35,6 +36,8 @@ from srunner.scenariomanager.scenarioatomics.atomic_trigger_conditions import (
 from srunner.scenariomanager.timer import TimeOut
 from srunner.scenarios.basic_scenario import BasicScenario
 from srunner.tools.scenario_helper import get_waypoint_in_distance
+
+from utils.sensor_utils import sensor_mapping, sensor_convert_mapping
 
 conversion_types = {
     "sensor.camera.rgb": cc.Raw,
@@ -90,6 +93,8 @@ class WorkersWorkingScenario(BasicScenario):
         Custom initialization
         """
         self.camera_sensors = []
+        time_str = datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
+
         pedestrian_configs = [
             actor for actor in config.other_actors if actor.model.startswith("walker")]
         pedestrian_actors = CarlaDataProvider.request_new_actors(
@@ -102,36 +107,9 @@ class WorkersWorkingScenario(BasicScenario):
             [actor for actor in config.other_actors if actor.model.startswith("static")])
         self.other_actors.extend(misc_actors)
 
-        bp_library = self._world.get_blueprint_library()
         for camera in [camera for camera in config.other_actors if camera.model.startswith("sensor.camera")]:
-            bp = bp_library.find(camera.model)
-            bp.set_attribute('image_size_x', str(1280))
-            bp.set_attribute('image_size_y', str(720))
-            bp.set_attribute('sensor_tick', '0')
-            # bp.set_attribute('gamma', '2.2')
-            camera_actor = self._world.spawn_actor(bp, camera.transform)
-            self.camera_sensors.append(
-                camera_actor
-            )
-            actor_ref = weakref.ref(camera_actor)
+            self.camera_sensors.append(sensor_mapping[camera.model](self._world, camera.transform, time_str))
 
-            def _parse_rgb_image(actor_ref, convert_type, image):
-                actor = actor_ref()
-                image.convert(convert_type)
-                image.save_to_disk(f'_out/{actor.id}/{image.frame}.jpeg')
-
-            def _parse_seg_image(actor_ref, convert_type, image):
-                actor = actor_ref()
-                image.convert(convert_type)
-                self._images.append(image)
-                # image.save_to_disk(f'_out/{actor.id}/{image.frame}.jpeg')
-            if camera.model.endswith("rgb"):
-                camera_actor.listen(
-                    lambda image: _parse_rgb_image(actor_ref, conversion_types[camera.model], image))
-            else:
-                camera_actor.listen(
-                    lambda image: _parse_seg_image(actor_ref, conversion_types[camera.model], image))
-            # self.other_actors
 
     def _create_behavior(self):
         """
@@ -170,8 +148,8 @@ class WorkersWorkingScenario(BasicScenario):
         # sequence.add_child(start_transform)
         sequence.add_child(driving_to_next_intersection)
         sequence.add_child(stop)
-        sequence.add_child(Idle(25))
-        # sequence.add_child(SaveImagesBehaviour(self._images))
+        for camera in self.camera_sensors:
+            sequence.add_child(SaveImagesBehaviour(camera.images, camera.sensor_type, camera.time_str))
         # sequence.add_child(ActorDestroy(self.other_actors[0]))
 
         return sequence
@@ -194,3 +172,5 @@ class WorkersWorkingScenario(BasicScenario):
         Remove all actors upon deletion
         """
         self.remove_all_actors()
+        for camera in self.camera_sensors:
+            camera.sensor.destroy()
