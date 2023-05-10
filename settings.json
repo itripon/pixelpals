@@ -9,7 +9,7 @@
     "pip_install": "pip install",
     "sep": "\\",
     "carla_engine_path": "WindowsNoEditor",
-    "carla_python_api_path": "WindowsNoEditor\\PythonAPI\\carla\\",
+    "carla_python_api_path": "WindowsNoEditor\\PythonAPI\\carla",
     "carla_python_api_requirements_path": "WindowsNoEditor\\PythonAPI\\examples",
     "scenario_runner_path": "scenario_runner-0.9.13",
     "carla_process": "CarlaUE4",
@@ -26,5 +26,6 @@
         }
     ],
     "scenario_runner": "scenario_runner.py",
-    "scenario_to_execute": "--scenario WorkersWorking_1 --sync --reloadWorld --configFile .\\scenarios\\WorkersWorking.xml --additionalScenario .\\scenarios\\workers_working.py"
+    "utils_path": "utils",
+    "scenario_to_execute": "--scenario WorkersWorking_2 --reloadWorld --sync --configFile .\\scenarios\\WorkersWorking.xml --additionalScenario .\\scenarios\\workers_working.py"
 }

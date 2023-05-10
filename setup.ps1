@@ -36,17 +36,6 @@ function cleanup {
         Remove-Item -Force $temp_files_to_download_csv
     }
 }
-
-function check_if_ening_is_running {
-    param(
-        # Carla engine exe path
-        [string]
-        $process_name
-    )
-    $process = Get-Process -Name $process_name -ErrorAction SilentlyContinue
-    return -not($process -eq $null)
-}
-
 # Check if the source files are available if not download them
 if (-not(check_sources $settings.carla_local $settings.scenario_runner_local)) {
     # Delete old files if any
@@ -88,34 +77,4 @@ if (-not(Test-Path .venv)) {
     Invoke-Expression $install_carla_package
     Invoke-Expression $scenario_runner_requirements
     Invoke-Expression $carla_requirements
-}
-
-# Add PYTHONPATH
-$env:PYTHONPATH = $cwd + $settings.sep + $settings.carla_local + $settings.sep + $settings.carla_python_api_path + ";" + $cwd + $settings.sep + $settings.scenario_runner_local + $settings.sep + $settings.scenario_runner_path
-
-# Activte virtual environment
-.venv/Scripts/activate.ps1
-
-# Start Carla engine  if it's not already running and wait 30 seconds
-$carla_engine_path = $cwd + $settings.sep + $settings.carla_local + $settings.sep + $settings.carla_engine_path + $settings.sep + $settings.carla_process + ".exe"
-
-if (-not(check_if_ening_is_running $settings.carla_process)) {
-    Write-Output("Starting CarlaUE4 engine")
-    Invoke-Expression $carla_engine_path
-    Start-Sleep -Seconds 20
-}
-
-# Start scenario
-Write-Output("Starting scenario(s)")
-# $scenario_command = "python " + $cwd + $settings.sep + $settings.carla_local + $settings.sep + "WindowsNoEditor\PythonAPI\examples\manual_control.py"
-$scenario_command = "python " + $cwd + $settings.sep + $settings.scenario_runner_local + $settings.sep + $settings.scenario_runner_path + $settings.sep + $settings.scenario_runner + " " + $settings.scenario_to_execute
-$scenario_command
-Invoke-Expression $scenario_command
-
-# Stop Carla engine if it's running
-if (check_if_ening_is_running $settings.carla_process) {
-    Write-Output("Stopping CarlaUE4 engine")
-    Stop-Process -Name $settings.carla_process_shipping
-    Stop-Process -Name $settings.carla_process
-    Start-Sleep -Seconds 10
 }
