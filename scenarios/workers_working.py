@@ -109,7 +109,7 @@ class WorkersWorkingScenario(BasicScenario):
 
         for camera in [camera for camera in config.other_actors if camera.model.startswith("sensor.camera")]:
             self.camera_sensors.append(sensor_mapping[camera.model](self._world, camera.transform, time_str))
-
+            self._world.get_spectator().set_transform(camera.transform)
 
     def _create_behavior(self):
         """

@@ -8,7 +8,7 @@
         <other_actor x="110" y="137" z="0.6" yaw="0" length="10" width="10" model="static.trigger.friction" />
         <other_actor x="120" y="133" z="5" yaw="0" model="sensor.camera.semantic_segmentation" />
         <other_actor x="120" y="133" z="5" yaw="0" model="sensor.camera.rgb" />
-        <weather cloudiness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth_angle="0" sun_altitude_angle="75" />
+        <weather cloudiness="20" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth_angle="45" sun_altitude_angle="45" />
     </scenario>
     <scenario name="WorkersWorking_2" type="WorkersWorkingScenario" town="Town05">
         <ego_vehicle x="107" y="133" z="0.5" yaw="0" model="vehicle.lincoln.mkz_2017" />

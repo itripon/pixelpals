@@ -25,7 +25,7 @@ class RGBSensor(object):
 
 class SemanticSegmentationSensor(object):
     def __init__(self, world, transform, time_str, converter=cc.CityScapesPalette):
-        bp = world.get_blueprint_library().find('sensor.camera.semantic_segmentation')
+        bp = world.get_blueprint_library().find('sensor.camera.instance_segmentation')
         bp.set_attribute('image_size_x', str(1280))
         bp.set_attribute('image_size_y', str(720))
         # bp.set_attribute('fov', str(VIEW_FOV))
